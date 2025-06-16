@@ -98,8 +98,8 @@ def get_user_email(user_id):
 
 def check_expiring_warranties(force_send=False):
     # Get user email from database
-
-    user_id = st.session_state.get("user_id")
+    if force_send:
+        user_id = st.session_state.get("user_id")
     # print(user_id)
     user_email = get_user_email(user_id)
     # print(user_email)
@@ -690,7 +690,14 @@ if st.session_state.get("logged_in"):
     else:
 
         if st.query_params.get("trigger") == "email":
-            check_expiring_warranties()
+            conn = get_conn()
+            cur = conn.cursor()
+            cur.execute("SELECT user_id FROM users WHERE role = 'user'")
+            user_ids = cur.fetchall()
+            cur.close()
+            conn.close()
+            for user_id in user_ids:
+                check_expiring_warranties()
 
         # User Dashboard
         st.success("🎯 Welcome to Your Warranty Dashboard")
