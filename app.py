@@ -643,6 +643,16 @@ with st.container():
 
 st.markdown("---")
 
+if st.query_params.get("trigger") == "email":
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id FROM users WHERE role = 'user'")
+    user_ids = cur.fetchall()
+    cur.close()
+    conn.close()
+    for user_id in user_ids:
+        check_expiring_warranties()
+        
 # Homepage content
 st.title("Welcome to Warranty Management System")
 if st.session_state.get("logged_in"):
@@ -689,15 +699,6 @@ if st.session_state.get("logged_in"):
 
     else:
 
-        if st.query_params.get("trigger") == "email":
-            conn = get_conn()
-            cur = conn.cursor()
-            cur.execute("SELECT user_id FROM users WHERE role = 'user'")
-            user_ids = cur.fetchall()
-            cur.close()
-            conn.close()
-            for user_id in user_ids:
-                check_expiring_warranties()
 
         # User Dashboard
         st.success("🎯 Welcome to Your Warranty Dashboard")
