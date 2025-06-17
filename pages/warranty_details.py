@@ -38,7 +38,7 @@ if st.session_state.get("logged_in"):
             )
     with cols[4]:
         if st.button("📧 Mail Report"):
-            check_expiring_warranties(force_send=True)
+            check_expiring_warranties()
     with cols[5]:
         if st.button("📤 Logout"):
             st.session_state.clear()
