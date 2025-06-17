@@ -96,13 +96,9 @@ def get_user_email(user_id):
     conn.close()
     return email[0] if email else None
 
-def check_expiring_warranties(force_send=False, user_id=None):
-    # Get user email from database
-    if force_send:
-        user_id = st.session_state.get("user_id")
-    # print(user_id)
+def check_expiring_warranties():
+    user_id = st.session_state.get("user_id")
     user_email = get_user_email(user_id)
-    # print(user_email)
     
     if not user_email:
         st.error("Could not find user email.")
@@ -111,180 +107,69 @@ def check_expiring_warranties(force_send=False, user_id=None):
     sender = st.secrets["email"]["sender"]
     password = st.secrets["email"]["password"]
     
-    if force_send:
-        warranties = get_all_warranties()
-        if not warranties:
-            st.warning("No warranties found to send.")
-            return
-        
-        # Create HTML email content for all warranties
-        email_body = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: #2c3e50;">Your Warranty Report</h1>
-                <p style="color: #7f8c8d;">Complete list of your registered warranties</p>
-            </div>
-            <div style="padding: 20px; background-color: white; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <h2 style="color: #3498db;">Warranty Summary</h2>
-                <p>Total Warranties: {len(warranties)}</p>
-                <div style="margin: 20px 0;">
-                    <h3 style="color: #2c3e50;">Warranty List:</h3>
-                    <ul style="list-style-type: none; padding: 0;">
-        """
-        
-        for warranty in warranties:
-            email_body += f"""
-                <li style="margin: 10px 0; padding: 10px; background-color: #f9f9f9; border-radius: 5px;">
-                    <strong style="color: #2c3e50;">{warranty[2]}</strong><br>
-                    Category: {warranty[3]}<br>
-                    Expires: {warranty[5]}
-                </li>
-            """
-        
-        email_body += """
-                    </ul>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 20px; color: #7f8c8d;">
-                <p>This is an automated message, please do not reply to this email.</p>
-            </div>
-        </div>
-        """
-        
-        # Generate PDF for all warranties
-        pdf_bytes = generate_warranty_pdf()
-        
-    else:
-        if st.query_params.get("token") != st.secrets["auth"]["token"]:
-            st.stop()
-        # Check for warranties expiring tomorrow
-        conn = get_conn()
-        cur = conn.cursor()
-        tomorrow = datetime.now().date() + timedelta(days=1)
-        
-        cur.execute("""
-            SELECT * FROM warranty_items 
-            WHERE warranty_end_date = %s AND user_id = %s
-        """, (tomorrow, user_id))
-        
-        expiring_items = cur.fetchall()
-        cur.close()
-        conn.close()
-        
-        if not expiring_items:
-            st.warning("No expiring warranties found to send.")
-            return  # No notification needed
-        
-        # Create HTML email content for expiring warranties
-        email_body = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #ff6b6b; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white;">⚠️ Warranty Expiration Alert</h1>
-                <p style="color: white;">The following items have warranties expiring tomorrow</p>
-            </div>
-            <div style="padding: 20px; background-color: white; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <ul style="list-style-type: none; padding: 0;">
-        """
-        
-        for item in expiring_items:
-            email_body += f"""
-                <li style="margin: 10px 0; padding: 10px; background-color: #fff3f3; border-radius: 5px; border-left: 4px solid #ff6b6b;">
-                    <strong style="color: #e74c3c;">{item[2]}</strong><br>
-                    Category: {item[3]}<br>
-                    Expires: {item[5]}
-                </li>
-            """
-        
-        email_body += """
-                </ul>
-                <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-                    <p style="margin: 0; color: #2c3e50;">
-                        Please take necessary action for the items listed above.
-                    </p>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px; color: #7f8c8d;">
-                <p>This is an automated message, please do not reply to this email.</p>
-            </div>
-        </div>
-        """
-        
-        # Generate PDF for expiring warranties
-        pdf_bytes = generate_expiring_warranty_pdf([(item[2], item[5]) for item in expiring_items])
+    warranties = get_all_warranties()
+    if not warranties:
+        st.warning("No warranties found to send.")
+        return
     
+    # Create HTML email content for all warranties
+    email_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: #2c3e50;">Your Warranty Report</h1>
+            <p style="color: #7f8c8d;">Complete list of your registered warranties</p>
+        </div>
+        <div style="padding: 20px; background-color: white; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h2 style="color: #3498db;">Warranty Summary</h2>
+            <p>Total Warranties: {len(warranties)}</p>
+            <div style="margin: 20px 0;">
+                <h3 style="color: #2c3e50;">Warranty List:</h3>
+                <ul style="list-style-type: none; padding: 0;">
+    """
+    
+    for warranty in warranties:
+        email_body += f"""
+            <li style="margin: 10px 0; padding: 10px; background-color: #f9f9f9; border-radius: 5px;">
+                <strong style="color: #2c3e50;">{warranty[2]}</strong><br>
+                Category: {warranty[3]}<br>
+                Expires: {warranty[5]}
+            </li>
+        """
+    
+    email_body += """
+                </ul>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #7f8c8d;">
+            <p>This is an automated message, please do not reply to this email.</p>
+        </div>
+    </div>
+    """
+    
+    # Generate PDF for all warranties
+    pdf_bytes = generate_warranty_pdf()
+        
     # Send email with attachment
     try:
         msg = MIMEMultipart("alternative")
-        msg['Subject'] = 'Complete Warranty Report' if force_send else 'Warranty Expiration Notice'
+        msg['Subject'] = 'Complete Warranty Report'
         msg['From'] = f"Warranty System <{sender}>"
         msg['To'] = user_email
         
         msg.attach(MIMEText(email_body, 'html'))
         
         pdf_attachment = MIMEApplication(pdf_bytes, _subtype='pdf')
-        pdf_attachment.add_header('Content-Disposition', 'attachment', 
-                                filename='warranty_report.pdf' if force_send else 'expiring_warranties.pdf')
+        pdf_attachment.add_header('Content-Disposition', 'attachment',  filename='warranty_report.pdf')
         msg.attach(pdf_attachment)
         
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
             smtp_server.login(sender, password)
             smtp_server.sendmail(sender, user_email, msg.as_string())
             
-        if force_send:
-            st.success("Complete warranty report sent to your email!")
-        else:
-            st.warning("Expiring warranty notification sent!")
+        st.success("Complete warranty report sent to your email!")
             
     except Exception as e:
         st.error(f"Failed to send email: {str(e)}")
-
-def generate_expiring_warranty_pdf(expiring_items):
-    pdf = FPDF()
-    conn = get_conn()
-    cur = conn.cursor()
-    
-    for item_name, expiry_date in expiring_items:
-        cur.execute("""
-            SELECT * FROM warranty_items 
-            WHERE item_name = %s AND warranty_end_date = %s
-        """, (item_name, expiry_date))
-        warranty = cur.fetchone()
-        if warranty:
-            pdf.add_page()
-            pdf.set_font('Arial', 'B', 16)
-            pdf.cell(0, 10, f'Item: {warranty[2]}', ln=True)  # item_name
-            pdf.set_font('Arial', '', 12)
-            pdf.cell(0, 10, f'Category: {warranty[3]}', ln=True)  # category
-            pdf.cell(0, 10, f'Purchase Date: {warranty[4]}', ln=True)  # purchase_date
-            pdf.cell(0, 10, f'Warranty End Date: {warranty[5]}', ln=True)  # warranty_end_date
-            pdf.cell(0, 10, f'Description: {warranty[7]}', ln=True)  # description
-
-            if warranty[6]:  # warranty_card_image
-                try:
-                    # Convert bytes to PIL Image
-                    image = Image.open(io.BytesIO(warranty[6]))
-                    # Convert to RGB if necessary
-                    if image.mode != 'RGB':
-                        image = image.convert('RGB')
-                        
-                    img_path = f"temp_{warranty[0]}.jpg"
-                    # Save as JPEG with proper quality
-                    image.save(img_path, 'JPEG', quality=85)
-                    
-                    # Add to PDF
-                    try:
-                        pdf.image(img_path, x=10, y=100, w=190)
-                    finally:
-                        # Clean up temp file
-                        if os.path.exists(img_path):
-                            os.remove(img_path)
-                except Exception as e:
-                    pdf.cell(0, 10, f"Error including warranty image: {str(e)}", ln=True)
-
-    cur.close()
-    conn.close()
-    return pdf.output(dest='S').encode('latin-1')  
 
 def generate_warranty_pdf():
     warranties = get_all_warranties()
@@ -643,16 +528,6 @@ with st.container():
 
 st.markdown("---")
 
-if st.query_params.get("trigger") == "email":
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT user_id FROM users WHERE role = 'user'")
-    user_ids = cur.fetchall()
-    cur.close()
-    conn.close()
-    for user_id in user_ids:
-        check_expiring_warranties(force_send=False, user_id=user_id[0])
-        
 # Homepage content
 st.title("Welcome to Warranty Management System")
 if st.session_state.get("logged_in"):
