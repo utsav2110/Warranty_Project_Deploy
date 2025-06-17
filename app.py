@@ -165,7 +165,7 @@ def check_expiring_warranties(force_send=False, user_id=None):
         cur.execute("""
             SELECT * FROM warranty_items 
             WHERE warranty_end_date = %s AND user_id = %s
-        """, (tomorrow, st.session_state.get("user_id")))
+        """, (tomorrow, user_id))
         
         expiring_items = cur.fetchall()
         cur.close()
