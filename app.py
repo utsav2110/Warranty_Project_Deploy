@@ -96,7 +96,7 @@ def get_user_email(user_id):
     conn.close()
     return email[0] if email else None
 
-def check_expiring_warranties(force_send=False):
+def check_expiring_warranties(force_send=False, user_id=None):
     # Get user email from database
     if force_send:
         user_id = st.session_state.get("user_id")
@@ -651,7 +651,7 @@ if st.query_params.get("trigger") == "email":
     cur.close()
     conn.close()
     for user_id in user_ids:
-        check_expiring_warranties()
+        check_expiring_warranties(force_send=False, user_id=user_id[0])
         
 # Homepage content
 st.title("Welcome to Warranty Management System")
