@@ -91,3 +91,14 @@ streamlit run app.py
 - Image preview
 - Form validation
 - Toast notifications
+
+## 🛠️ Scheduled Maintenance Tasks
+
+This project is supported by a scheduled GitHub Actions workflow that performs daily maintenance tasks:
+
+- 📬 Sends reminder emails **one day before** an item's warranty expires
+- 🗑️ Automatically deletes items from database whose warranties have already expired
+
+These tasks are managed through a GitHub Actions workflow located in a separate repository:  
+👉 [View the automation code here](https://github.com/utsav2110/Warranty_deploy_automation)
+
